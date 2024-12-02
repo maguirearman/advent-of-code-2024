@@ -6,10 +6,15 @@ public class Day01 : BaseDay
 
     public Day01()
     {
-        _input = File.ReadAllText(InputFilePath);
+        _input = File.ReadAllLines(InputFilePath);
     }
 
-    public override ValueTask<string> Solve_1() => new($"Solution to {ClassPrefix} {CalculateIndex()}, part 1");
+
+    public override ValueTask<string> Solve_1()
+    {
+
+        return new("");
+    }
 
     public override ValueTask<string> Solve_2() => new($"Solution to {ClassPrefix} {CalculateIndex()}, part 2");
 }
