@@ -14,6 +14,19 @@ public class Day08 : BaseDay
     {
         _input = File.ReadAllLines(InputFilePath);
     }
+    public (int x, int y) WalkAntinode((int x, int y) start, (int x, int y) other)
+    {
+        int dx = other.x - start.x;
+        int dy = other.y - start.y;
+
+        //scale movement by 2 (double the distance)
+        return (start.x + 2 * dx, start.y + 2 * dy);
+    }
+
+    bool IsWithinBounds((int x, int y) pos, string[] map)
+    {
+        return pos.x >= 0 && pos.x < map[0].Length && pos.y >= 0 && pos.y < map.Length;
+    }
 
     public override ValueTask<string> Solve_1()
     {
@@ -49,55 +62,51 @@ public class Day08 : BaseDay
         //set to store unique antinode positions
         HashSet<(int x, int y)> antinodePositions = new HashSet<(int x, int y)>();
 
-        foreach (char freq in antennas.Keys)
+        foreach (var kvp in antennas)
         {
+            List<(int x, int y)> positions = kvp.Value;
+
+            for (int i = 0; i < positions.Count; i++)
             {
-                List<(int x, int y)> positions = antennas[freq];
-
-
-                for (int i = 0; i < positions.Count; i++)
+                for (int j = i + 1; j < positions.Count; j++)
                 {
-                    for (int j = i + 1; j < positions.Count; j++)
+                    var point1 = positions[i];
+                    var point2 = positions[j];
+
+                    Console.WriteLine($"Checking antenna pair: ({point1.x}, {point1.y}) - ({point2.x}, {point2.y})");
+
+                    //walk along diagonal direction (point1 -> point2)
+                    var antinode1 = WalkAntinode(point1, point2);
+                    if (IsWithinBounds(antinode1, _input))
                     {
-                        var (x1, y1) = positions[i];
-                        var (x2, y2) = positions[j];
+                        Console.WriteLine($"Adding antinode at: ({antinode1.x}, {antinode1.y})");
+                        antinodePositions.Add(antinode1);
+                    }
 
-                        Console.WriteLine($"Checking pair: ({x1},{y1}) and ({x2},{y2})");
-
-                        int dx = x2 - x1;
-                        int dy = y2 - y1;
-
-                        Console.WriteLine($"dx: {dx}, dy: {dy}");
-
-                        // Check if the pair satisfies the twice-as-far rule
-                        if ((dx == 2 * dy) || (dy == 2 * dx))
-                        {
-                            Console.WriteLine("Pair satisfies twice-as-far condition.");
-
-                            int midX = (x1 + x2) / 2;
-                            int midY = (y1 + y2) / 2;
-
-                            Console.WriteLine($"Midpoint calculated: ({midX}, {midY})");
-
-                            if (midX >= 0 && midX < _input[0].Length && midY >= 0 && midY < _input.Length)
-                            {
-                                Console.WriteLine($"Adding to antinodePositions: ({midX}, {midY})");
-                                antinodePositions.Add((midX, midY));
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Midpoint out of bounds: ({midX}, {midY})");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pair does NOT satisfy twice-as-far condition.");
-                        }
+                    //walk along diagonal direction (point2 -> point1) — compute the reverse walk
+                    var antinode2 = WalkAntinode(point2, point1);
+                    if (IsWithinBounds(antinode2, _input))
+                    {
+                        Console.WriteLine($"Adding antinode at: ({antinode2.x}, {antinode2.y})");
+                        antinodePositions.Add(antinode2);
                     }
                 }
-
             }
         }
+
+        //create a visual map with dimensions matching the input
+        char[,] visualMap = new char[_input.Length, _input[0].Length];
+
+        //initialize the map with the input's characters directly
+        for (int y = 0; y < _input.Length; y++)
+        {
+            for (int x = 0; x < _input[y].Length; x++)
+            {
+                visualMap[y, x] = _input[y][x];
+            }
+        }
+
+
         return new(antinodePositions.Count.ToString());
     }
 
