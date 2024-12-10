@@ -195,7 +195,6 @@ public class Day06 : BaseDay
                     if (LeadsToInfiniteLoop(grid, guardCoordinates.Value, currentDirection))
                     {
                         count++;
-                        Console.WriteLine($"Infinite loop at: ({i}, {j})");
                     }
 
                     // Restore the original map after testing
