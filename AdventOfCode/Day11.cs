@@ -18,40 +18,33 @@ public class Day11 : BaseDay
 
     static ConcurrentDictionary<string, List<string>> memorization = new ConcurrentDictionary<string, List<string>>();
 
-    static List<string> Blink(List<string> stones)
+    public Dictionary<string, long> Blink(Dictionary<string, long> currentDict)
     {
-        // Group stones to reduce redundant processing
-        var groupedStones = stones.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
-        ConcurrentBag<string> newStones = new ConcurrentBag<string>();
+        var newDict = new Dictionary<string, long>();
 
-        Parallel.ForEach(groupedStones, stoneGroup =>
+        foreach (var entry in currentDict)
         {
-            string stone = stoneGroup.Key;
-            int count = stoneGroup.Value;
+            string stone = entry.Key;
+            long count = entry.Value;
 
-            //skip stabilized values
-            if (stone == "1")
+            //transform the stone using cached or computed result
+            var transformedStones = memorization.GetOrAdd(stone, ProcessStone);
+
+            //accumulate the counts for each transformed stone
+            foreach (var transformedStone in transformedStones)
             {
-                for (int i = 0; i < count; i++)
-                    newStones.Add("1");
-                return;
-            }
-
-            //get or compute the transformation
-            List<string> result = memorization.GetOrAdd(stone, ProcessStone);
-
-            //add the result to the output for each occurrence
-            foreach (var res in result)
-            {
-                for (int i = 0; i < count; i++)
+                if (!newDict.ContainsKey(transformedStone))
                 {
-                    newStones.Add(res);
+                    newDict[transformedStone] = 0;
                 }
+                newDict[transformedStone] += count;
             }
-        });
+        }
 
-        return newStones.ToList();
+        return newDict;
     }
+
+
 
     static List<string> ProcessStone(string stone)
     {
@@ -80,27 +73,35 @@ public class Day11 : BaseDay
 
     public override ValueTask<string> Solve_1()
     {
-        List<string> stones = _input.Split(' ').ToList();
+        // Parse input into an initial dictionary
+        var stones = _input.Split(' ').GroupBy(s => s)
+                           .ToDictionary(g => g.Key, g => (long)g.Count());
+
         int blinks = 25;
 
         for (int i = 0; i < blinks; i++)
         {
             stones = Blink(stones);
         }
-        return new(stones.Count.ToString());
+
+        long totalStones = stones.Values.Sum();
+        return new(totalStones.ToString());
     }
 
     public override ValueTask<string> Solve_2()
     {
-        List<string> stones = _input.Split(' ').ToList();
+        // Parse input into an initial dictionary
+        var stones = _input.Split(' ').GroupBy(s => s)
+                           .ToDictionary(g => g.Key, g => (long)g.Count());
+
         int blinks = 75;
 
         for (int i = 0; i < blinks; i++)
         {
             stones = Blink(stones);
-            Console.WriteLine($"After {i + 1} blink(s): {stones.Count} stones");
         }
 
-        return new(stones.Count.ToString());
+        long totalStones = stones.Values.Sum();
+        return new(totalStones.ToString());
     }
 }
