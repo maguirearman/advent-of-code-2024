@@ -99,70 +99,13 @@ public class Day12 : BaseDay
     }
 
 
-    private (int area, int turns) ExploreRegionWithTurns(char[,] grid, bool[,] visited, int startX, int startY)
-    {
-        int rows = grid.GetLength(0);
-        int cols = grid.GetLength(1);
-        char plantType = grid[startX, startY];
-
-        // Directions to traverse neighbors (Up, Down, Left, Right)
-        var directions = new (int dx, int dy)[]
-        {
-        (-1, 0), // Up
-        (1, 0),  // Down
-        (0, -1), // Left
-        (0, 1)   // Right
-        };
-
-        // BFS/DFS to trace the region boundary and count "turns"
-        Queue<(int, int, (int, int))> queue = new Queue<(int, int, (int, int))>();
-        queue.Enqueue((startX, startY, (-1, -1))); // Start with initial position
-        visited[startX, startY] = true;
-
-        int area = 0;
-        int turns = 0;
-        (int, int) currentDirection = (-1, -1);
-
-        while (queue.Count > 0)
-        {
-            var (x, y, prevDirection) = queue.Dequeue();
-            area++;
-
-            // Explore all neighbors to find external transitions
-            foreach (var dir in directions)
-            {
-                int newX = x + dir.dx;
-                int newY = y + dir.dy;
-
-                if (newX >= 0 && newX < rows && newY >= 0 && newY < cols)
-                {
-                    if (grid[newX, newY] == plantType && !visited[newX, newY])
-                    {
-                        visited[newX, newY] = true;
-                        queue.Enqueue((newX, newY, dir));
-
-                        if (currentDirection != (-1, -1) && dir != currentDirection)
-                        {
-                            // Detected a turn
-                            turns++;
-                        }
-
-                        currentDirection = dir; // Update current movement direction
-                    }
-                }
-            }
-        }
-
-        return (area, turns);
-    }
-
     public override ValueTask<string> Solve_2()
     {
         int rows = _input.Length;
         int cols = _input[0].Length;
 
         char[,] grid = new char[rows, cols];
-        bool[,] visited = new bool[rows, cols];
+        Dictionary<char, List<(int x, int y)>> plantRegions = new Dictionary<char, List<(int x, int y)>>();
 
         //build the grid
         for (int i = 0; i < rows; i++)
@@ -171,28 +114,82 @@ public class Day12 : BaseDay
             {
                 grid[i, j] = _input[i][j];
             }
-
         }
-        int totalPrice = 0;
 
-        // Explore all regions
+        //build the grid
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
             {
-                if (!visited[i, j])
+                char plantType = _input[i][j];
+
+                if (!plantRegions.ContainsKey(plantType))
                 {
-                    var (area, turns) = ExploreRegionWithTurns(grid, visited, i, j);
-                    if (area > 0 && turns > 0)
-                    {
-                        int regionPrice = area * turns;
-                        totalPrice += regionPrice;
-                        Console.WriteLine($"Region Plant Type: {grid[i, j]}, Area: {area}, Turns: {turns}, Total Price: {regionPrice}");
-                    }
+                    plantRegions[plantType] = new List<(int x, int y)>();
                 }
+
+                plantRegions[plantType].Add((i, j));
             }
         }
 
-        return new(totalPrice.ToString());
+        bool IsCorner(int x, int y, char plantType)
+        {
+            // Directions: Left, Right, Up, Down
+            (int dx, int dy)[] directions =
+            {
+            (-1, 0), (1, 0), (0, -1), (0, 1)
+        };
+
+            int neighborCount = 0;
+
+            foreach (var (dx, dy) in directions)
+            {
+                int neighborX = x + dx;
+                int neighborY = y + dy;
+
+                if (IsWithinBounds(neighborX, neighborY) && grid[neighborX, neighborY] == plantType)
+                {
+                    neighborCount++;
+                }
+            }
+
+            return neighborCount == 1 || neighborCount == 3; // A corner is defined by having 2 or more neighbors
+        }
+
+        bool IsWithinBounds(int x, int y)
+        {
+            // Assuming the plant map is 10x10 or adjust accordingly
+            return x >= 0 && x < 10 && y >= 0 && y < 10;
+        }
+
+        // Calculate area and number of sides for a region
+        (int area, int numberOfSides) CalculateRegionProperties(List<(int x, int y)> coordinates, char plantType)
+        {
+            int area = coordinates.Count;
+            int numberOfSides = 0;
+
+            foreach (var (x, y) in coordinates)
+            {
+                if (IsCorner(x, y, plantType))
+                {
+                    Console.WriteLine($"Coordinate ({x}, {y}) is a corner for plant type '{plantType}'");
+                    numberOfSides++;
+                }
+            }
+
+            return (area, numberOfSides);
+        }
+
+
+        int sum = 0;
+        foreach (var region in plantRegions)
+        {
+            var (area, numberOfSides) = CalculateRegionProperties(region.Value, region.Key);
+            int areaSideProduct = area * numberOfSides;
+            sum += areaSideProduct;
+            Console.WriteLine($"Plant Type: {region.Key}, Area: {area}, Sides: {numberOfSides}, Area * Sides: {areaSideProduct}");
+        }
+
+        return new(sum.ToString());
     }
 }
