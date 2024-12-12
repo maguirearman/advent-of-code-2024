@@ -150,21 +150,24 @@ public class Day08 : BaseDay
                     var point1 = positions[i];
                     var point2 = positions[j];
 
-                    // Check antinode paths scaled by varying multipliers
-                    for (int iter = 2; iter <= 100; iter++) // Iterate scaling factors from 2x to 5x
+                    int iter = 1;
+                    var antinode1 = WalkAntinodeIterate(point1, point2, iter);
+                    while (IsWithinBounds(antinode1, _input))
                     {
-                        var antinode1 = WalkAntinodeIterate(point1, point2, iter);
-                        if (IsWithinBounds(antinode1, _input))
-                        {
-                            antinodePositions.Add(antinode1);
-                        }
-
-                        var antinode2 = WalkAntinodeIterate(point2, point1, iter);
-                        if (IsWithinBounds(antinode2, _input))
-                        {
-                            antinodePositions.Add(antinode2);
-                        }
+                        antinodePositions.Add(antinode1);
+                        iter++;
+                        antinode1 = WalkAntinodeIterate(point1, point2, iter);
                     }
+
+                    iter = 1;
+                    var antinode2 = WalkAntinodeIterate(point2, point1, iter);
+                    while (IsWithinBounds(antinode2, _input))
+                    {
+                        antinodePositions.Add(antinode2);
+                        iter++;
+                        antinode2 = WalkAntinodeIterate(point2, point1, iter);
+                    }
+
                 }
             }
         }
